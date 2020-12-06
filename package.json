@@ -5,7 +5,9 @@
   "scripts": {
     "test": "jest",
     "lint": "prettier --check . && eslint .",
-    "lint:fix": "prettier --write . && eslint . --fix"
+    "lint:fix": "prettier --write . && eslint . --fix",
+    "dev" : "webpack serve",
+    "build" : "webpack"
   },
   "repository": {
     "type": "git",

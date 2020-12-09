@@ -6,8 +6,8 @@
     "test": "jest",
     "lint": "prettier --check . && eslint .",
     "lint:fix": "prettier --write . && eslint . --fix",
-    "dev" : "webpack serve",
-    "build" : "webpack"
+    "dev": "webpack serve",
+    "build": "webpack"
   },
   "repository": {
     "type": "git",
@@ -50,6 +50,9 @@
     "*.js": "eslint --cache --fix",
     "*.{js,css,md,html}": "prettier --write"
   },
-  "dependencies": {},
+  "dependencies": {
+    "core-js": "^3.8.1",
+    "regenerator-runtime": "^0.13.7"
+  },
   "description": ""
 }

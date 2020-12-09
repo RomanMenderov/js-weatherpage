@@ -1,6 +1,8 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-use-before-define */
 // import { library } from "webpack";
+import "regenerator-runtime/runtime";
+//  import "core-js/stable";
 
 /**
  * 
@@ -17,10 +19,10 @@
 const userHistoryLocalName = "userCityHistory";
 const apiKey = "fa5292c9164722fbd4dd9fb5132d9ea9";
 const historyLength = 10;
-const userHistory = getUserHistory();
+const userHistory = [];
 
 /** working with localStorage start */
-export async function getUserHistory() {
+export function getUserHistory() {
   const result = localStorage.getItem(userHistoryLocalName);
   if (result) {
     return JSON.parse(result);
@@ -35,8 +37,10 @@ export async function setUserHistory(array) {
 /** working with localStorage end */
 
 /** working with userHistoryArr start */
-export function isUsersQuestionUnique(question, array = userHistory) {
-  return array.indexOf(question);
+export function isUsersQuestionNotUnique(question, array = userHistory) {
+  return array.some((el) => {
+    return question.toLowerCase() === el.toLowerCase();
+  });
 }
 
 export function checkUserHistoryStatus(array) {
@@ -47,7 +51,7 @@ export function checkUserHistoryStatus(array) {
 }
 
 export function saveCityToHistory(question, array = userHistory) {
-  if (isUsersQuestionUnique(question, array) === -1) {
+  if (!isUsersQuestionNotUnique(question, array)) {
     array.unshift(question);
     if (!checkUserHistoryStatus(array)) {
       array.pop();
@@ -72,12 +76,49 @@ export async function getUserCity() {
 export async function showMyWeather() {
   const userCity = await getUserCity();
   const myWeather = await getWeatherCity(userCity);
-  return showWetherResults(userCity, myWeather);
+  return (
+    showWetherResults(userCity, JSON.stringify(myWeather)),
+    showMyMapResults(getMapCityUrl(myWeather.coord))
+  );
+}
+/*
+google
+export async function getMapCityUrl(coordinates) {
+  const apiUrlBasic = "https://maps.googleapis.com/maps/api/staticmap?"
+  const size = "200x200";
+  const scale = 2;
+  const key = "AIzaSyCC5A_TxujNNqvrCyCGXEtb9nRlIsKWPJA";
+  let longitude = coordinates.lon;
+  let latitude = coordinates.lat;
+  let apiUrl = apiUrlBasic + `center=${longitude},${latitude}` +
+                `&size=${size}&scale=${scale}&key=${key}`;
+
+  const response = await fetch(apiUrl);
+  if (response.ok) {
+    const result = await response.json();
+    return result;
+  }
+  return false;
+}
+*/
+
+export function getMapCityUrl(coordinates) {
+  const apiUrlBasic = "https://static-maps.yandex.ru/1.x/?l=map";
+  const size = "400,400";
+  const zoom = 10;
+  //  const key = "ff1506d9-6fce-4710-8c9d-d5a2c11ce32b";
+  const longitude = coordinates.lon;
+  const latitude = coordinates.lat;
+  const apiUrl = `${apiUrlBasic}&ll=${longitude},${latitude}
+&size=${size}&z=${zoom}&pt=${longitude},${latitude}`;
+  //  apiUrlBasic + `&ll=${longitude},${latitude}` + `&size=${size}&z=${zoom}`; //  + &key=${key};
+
+  return apiUrl;
 }
 
 export async function getWeatherCity(cityName) {
   const apiUrl = `https://api.openweathermap.org/data/2.5/weather
-  ?q=${cityName}&appid=${apiKey}`;
+?q=${cityName}&appid=${apiKey}`;
   const response = await fetch(apiUrl);
   if (response.ok) {
     const result = await response.json();
@@ -99,6 +140,7 @@ export function showUserHistory(array, historyElement) {
       const myWeather = await getWeatherCity(question);
       if (myWeather) {
         showWetherResults(question, JSON.stringify(myWeather));
+        showMyMapResults(getMapCityUrl(myWeather.coord));
       }
     });
     historyElement.appendChild(domElem);
@@ -115,10 +157,21 @@ export function showWetherResults(
   weatherElement.innerText = weather;
 }
 
+export function showMyMapResults(
+  myUrl,
+  mapElement = document.getElementById("weatherMap")
+) {
+  if (myUrl) {
+    mapElement.src = myUrl;
+    mapElement.style.display = "block";
+  }
+  return false;
+}
+
 export async function getWeatherFromCityElement(element) {
   const cityName = element.innerText;
   const weather = await getWeatherCity(cityName);
-  return showWetherResults(cityName, weather);
+  return showWetherResults(cityName, JSON.stringify(weather));
 }
 
 export function addWeatherForm(el) {
@@ -144,6 +197,14 @@ export function addWeatherForm(el) {
   button.innerText = "Проверить погоду";
   el.appendChild(button);
 
+  const weatherMap = document.createElement("img");
+  weatherMap.id = "weatherMap";
+  weatherMap.src = "";
+  weatherMap.width = "400";
+  weatherMap.height = "400";
+  weatherMap.style.display = "none";
+  el.appendChild(weatherMap);
+
   const cityList = document.createElement("ul");
   cityList.id = "cityList";
   el.appendChild(cityList);
@@ -161,6 +222,7 @@ export function addWeatherForm(el) {
       );
       saveCityToHistory(question);
       showUserHistory(userHistory, cityList);
+      showMyMapResults(getMapCityUrl(myWeather.coord), weatherMap);
     } else {
       showWetherResults(
         question,
@@ -171,6 +233,10 @@ export function addWeatherForm(el) {
     }
   });
 
+  getUserHistory().forEach((arrElement) => {
+    userHistory.push(arrElement);
+  });
+  showUserHistory(userHistory, cityList);
   showMyWeather();
 }
 

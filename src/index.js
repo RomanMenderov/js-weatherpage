@@ -77,7 +77,7 @@ export async function showMyWeather() {
   const userCity = await getUserCity();
   const myWeather = await getWeatherCity(userCity);
   return (
-    showWetherResults(userCity, JSON.stringify(myWeather)),
+    showWetherResults(userCity, myWeather),
     showMyMapResults(getMapCityUrl(myWeather.coord))
   );
 }
@@ -118,7 +118,7 @@ export function getMapCityUrl(coordinates) {
 
 export async function getWeatherCity(cityName) {
   const apiUrl = `https://api.openweathermap.org/data/2.5/weather
-?q=${cityName}&appid=${apiKey}`;
+?q=${cityName}&units=metric&appid=${apiKey}`;
   const response = await fetch(apiUrl);
   if (response.ok) {
     const result = await response.json();
@@ -139,7 +139,7 @@ export function showUserHistory(array, historyElement) {
       const question = domElem.innerText;
       const myWeather = await getWeatherCity(question);
       if (myWeather) {
-        showWetherResults(question, JSON.stringify(myWeather));
+        showWetherResults(question, myWeather);
         showMyMapResults(getMapCityUrl(myWeather.coord));
       }
     });
@@ -149,12 +149,21 @@ export function showUserHistory(array, historyElement) {
 
 export function showWetherResults(
   cityName,
-  weather,
+  weatherObj,
   weatherElement = document.getElementById("weatherCurrentParams"),
   cityElement = document.getElementById("weatherCurrentCity")
 ) {
-  cityElement.innerText = cityName;
-  weatherElement.innerText = weather;
+  if (typeof weatherObj === "string") {
+    cityElement.innerHTML = `${cityName}`;
+    weatherElement.innerText = weatherObj;
+  } else {
+    const icoURL = `https://openweathermap.org/img/w/
+${weatherObj.weather[0].icon}.png`;
+    cityElement.innerHTML = `${cityName}&nbsp;<img width="50" src="${icoURL}">`;
+    weatherElement.innerText = `Температура: ${JSON.stringify(
+      weatherObj.main.temp
+    )}`;
+  }
 }
 
 export function showMyMapResults(
@@ -171,7 +180,7 @@ export function showMyMapResults(
 export async function getWeatherFromCityElement(element) {
   const cityName = element.innerText;
   const weather = await getWeatherCity(cityName);
-  return showWetherResults(cityName, JSON.stringify(weather));
+  return showWetherResults(cityName, weather);
 }
 
 export function addWeatherForm(el) {
@@ -216,7 +225,7 @@ export function addWeatherForm(el) {
     if (myWeather) {
       showWetherResults(
         question,
-        JSON.stringify(myWeather),
+        myWeather,
         weatherCurrentParams,
         weatherCurrentCity
       );

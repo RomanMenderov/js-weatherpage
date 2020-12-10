@@ -3,9 +3,11 @@ import {
   addWeatherForm,
   getUserHistory,
   setUserHistory,
-  isUsersQuestionUnique,
+  isUsersQuestionNotUnique,
   checkUserHistoryStatus,
   saveCityToHistory,
+  getMapCityUrl,
+  showMyMapResults,
   //  getUserCity,
   showUserHistory,
   showWetherResults,
@@ -33,6 +35,13 @@ describe("test 1st task", () => {
     expect(el.querySelector("input")).not.toBe(null);
   });
 
+  test("it should create map url", () => {
+    const myCoord = { lon: Math.random(), lat: Math.random() };
+    expect(getMapCityUrl(myCoord)).toEqual(
+      expect.stringContaining(`${myCoord.lon},${myCoord.lat}`)
+    );
+  });
+
   test("it should check user history", () => {
     jest.spyOn(window.localStorage.__proto__, "getItem");
     window.localStorage.__proto__.setItem = jest.fn();
@@ -53,8 +62,8 @@ describe("test 1st task", () => {
   test("it should check if city is unique ", () => {
     userHistory.push("Moscow");
 
-    expect(isUsersQuestionUnique("New York", userHistory)).toEqual(-1);
-    expect(isUsersQuestionUnique("Moscow", userHistory)).toBe(0);
+    expect(isUsersQuestionNotUnique("New York", userHistory)).toEqual(false);
+    expect(isUsersQuestionNotUnique("Moscow", userHistory)).toBe(true);
   });
 
   test("it should check if history length allowed", () => {
@@ -94,14 +103,43 @@ describe("test 1st task", () => {
   }); */
   test("it should check if wether is on site", () => {
     addWeatherForm(el);
+    const temp = Math.random();
     showWetherResults(
       "My city",
-      "bad",
+      {
+        coord: { lon: 21.78, lat: 38.3 },
+        weather: [
+          { id: 501, main: "Rain", description: "moderate rain", icon: "10n" },
+        ],
+        main: { temp },
+      },
       el.querySelector("#weatherCurrentParams"),
       el.querySelector("#weatherCurrentCity")
     );
 
-    expect(el.querySelector("#weatherCurrentParams").innerText).toBe("bad");
-    expect(el.querySelector("#weatherCurrentCity").innerText).toBe("My city");
+    expect(el.querySelector("#weatherCurrentParams").innerText).toBe(
+      `Температура: ${temp}`
+    );
+    expect(el.querySelector("#weatherCurrentCity").innerHTML).toBeTruthy();
+
+    showWetherResults(
+      "My city",
+      "не найдено",
+      el.querySelector("#weatherCurrentParams"),
+      el.querySelector("#weatherCurrentCity")
+    );
+    expect(el.querySelector("#weatherCurrentParams").innerText).toBe(
+      `не найдено`
+    );
+    expect(el.querySelector("#weatherCurrentCity").innerHTML).toBe(`My city`);
+  });
+
+  test("it should check if map is on site", () => {
+    addWeatherForm(el);
+    const mapElement = el.querySelector("#weatherMap");
+    showMyMapResults("http://", mapElement);
+
+    expect(mapElement.src).toBe(`http://`);
+    expect(mapElement.style.display).toBe("block");
   });
 });
